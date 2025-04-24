@@ -3,7 +3,12 @@ const cors = require("cors");
 const admin = require("firebase-admin");
 const bodyParser = require("body-parser");
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_JSON);
+// ✅ Fix Firebase JSON parsing from ENV
+const raw = process.env.FIREBASE_JSON;
+const serviceAccount = JSON.parse(raw);
+if (serviceAccount.private_key.includes("\\n")) {
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
