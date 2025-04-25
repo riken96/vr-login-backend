@@ -20,16 +20,30 @@ app.use(bodyParser.json());
 
 app.post("/createToken", async (req, res) => {
   const { idToken } = req.body;
+
+  console.log("📥 Received ID token:", idToken?.substring(0, 30) + "...");
+
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log("✅ Decoded token:", decodedToken);
+
     const uid = decodedToken.uid;
     const customToken = await admin.auth().createCustomToken(uid);
+    console.log("🎟️ Firebase custom token created for UID:", uid);
+
     res.json({ token: customToken });
   } catch (err) {
-    console.error("Token creation failed:", err);
-    res.status(500).json({ error: "Token creation failed." });
+    console.error("❌ Token creation failed:");
+    console.error("🧨 Message:", err.message);
+    console.error("📜 Full error:", err);
+
+    res.status(500).json({
+      error: "Token creation failed.",
+      message: err.message
+    });
   }
 });
+
 
 app.get("/", (req, res) => res.send("Auth Server Running"));
 const PORT = process.env.PORT || 3000;
