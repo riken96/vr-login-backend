@@ -18,6 +18,10 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Store login status
+let isLoggedIn = false;
+let lastLoginTime = null;  
+
 app.post("/createToken", async (req, res) => {
   const { idToken } = req.body;
 
@@ -31,7 +35,11 @@ app.post("/createToken", async (req, res) => {
     const customToken = await admin.auth().createCustomToken(uid);
     console.log("🎟️ Firebase custom token created for UID:", uid);
 
-    res.json({ token: customToken });
+     isLoggedIn = true;
+    lastLoginTime = new Date();
+
+    res.json({ token: customToken ,
+             isLoggedIn: true});
   } catch (err) {
     console.error("❌ Token creation failed:");
     console.error("🧨 Message:", err.message);
@@ -44,6 +52,25 @@ app.post("/createToken", async (req, res) => {
   }
 });
 
+app.get("/checkLoginStatus", (req, res) => {
+  // Check if login is still valid (within last 24 hours)
+  const now = new Date();
+  const hoursSinceLastLogin = lastLoginTime ? (now - lastLoginTime) / (1000 * 60 * 60) : 24;
+  
+  if (hoursSinceLastLogin > 24) {
+    isLoggedIn = false;
+  }
+
+  res.json({ 
+    isLoggedIn: isLoggedIn,
+    lastLoginTime: lastLoginTime
+  });
+});
+app.post("/resetLoginStatus", (req, res) => {
+  isLoggedIn = false;
+  lastLoginTime = null;
+  res.json({ success: true });
+});
 
 app.get("/", (req, res) => res.send("Auth Server Running"));
 const PORT = process.env.PORT || 3000;
